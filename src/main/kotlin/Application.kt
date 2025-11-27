@@ -8,16 +8,25 @@ import kotlin.time.Duration
 
 fun application(
   timeout: Duration = Duration.INFINITE,
-  action: suspend context(CoroutineScope, ResourceScope) () -> Unit,
+  action: suspend ResourceCoroutineScope.() -> Unit,
 ) = SuspendApp(EmptyCoroutineContext, timeout) {
   logger.debug { "Hello, world!" }
   try {
     resourceScope {
-      action()
+      val scope =
+        object :
+          ResourceCoroutineScope,
+          CoroutineScope by this@SuspendApp,
+          ResourceScope by this@resourceScope {}
+      scope.action()
     }
   } finally {
     logger.debug { "Goodbye!" }
   }
 }
+
+interface ResourceCoroutineScope :
+  CoroutineScope,
+  ResourceScope
 
 private val logger = KotlinLogging.logger("Main")

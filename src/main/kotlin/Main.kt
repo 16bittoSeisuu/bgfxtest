@@ -69,12 +69,29 @@ import org.lwjgl.system.Platform
 
 fun main() =
   application {
-    check(glfwInit()) { "Unable to initialize GLFW" }
+    val width = 1280
+    val height = 720
+    install(
+      acquire = {
+        check(glfwInit()) { "Unable to initialize GLFW" }
+      },
+      release = { _, _ ->
+        glfwTerminate()
+      },
+    )
 
     glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
-    val window = glfwCreateWindow(1280, 720, "", 0, 0)
+    val window =
+      install(
+        acquire = {
+          glfwCreateWindow(width, height, "", 0, 0)
+        },
+        release = { window, _ ->
+          glfwDestroyWindow(window)
+        },
+      )
     check(window != 0L) { "Failed to create GLFW window" }
     logger.debug { "Created GLFW window" }
 
@@ -115,11 +132,18 @@ fun main() =
         }
       platformData.nwh(nativeWindowHandle)
 
-      check(bgfx_init(init)) { "Failed to initialize bgfx" }
+      install(
+        acquire = {
+          check(bgfx_init(init)) { "Failed to initialize bgfx" }
+        },
+        release = { _, _ ->
+          bgfx_shutdown()
+        },
+      )
     }
     logger.debug { "Initialized bgfx" }
 
-    bgfx_set_view_rect(0, 0, 0, 1280, 720)
+    bgfx_set_view_rect(0, 0, 0, width, height)
     val background = Color.gray80.toRgba8888()
     bgfx_set_view_clear(
       0,
@@ -184,10 +208,17 @@ fun main() =
               checkNotNull(bgfx_copy(vertexBuffer)) {
                 "Failed to copy vertex buffer data"
               }
-            bgfx_create_vertex_buffer(
-              vertexMemory,
-              layout,
-              BGFX_BUFFER_NONE,
+            install(
+              acquire = {
+                bgfx_create_vertex_buffer(
+                  vertexMemory,
+                  layout,
+                  BGFX_BUFFER_NONE,
+                )
+              },
+              release = { buf, _ ->
+                bgfx_destroy_vertex_buffer(buf)
+              },
             )
           }
         val indexBuffer =
@@ -201,9 +232,16 @@ fun main() =
               checkNotNull(bgfx_copy(indexBuffer)) {
                 "Failed to copy index buffer data"
               }
-            bgfx_create_index_buffer(
-              indexMemory,
-              BGFX_BUFFER_NONE,
+            install(
+              acquire = {
+                bgfx_create_index_buffer(
+                  indexMemory,
+                  BGFX_BUFFER_NONE,
+                )
+              },
+              release = { buf, _ ->
+                bgfx_destroy_index_buffer(buf)
+              },
             )
           }
         val shader =
@@ -224,6 +262,7 @@ fun main() =
                 }
               return bgfx_create_shader(shaderMemory)
             }
+
             val rendererType = bgfx_get_renderer_type()
             val subdir =
               if (rendererType == BGFX_RENDERER_TYPE_METAL) {
@@ -231,10 +270,17 @@ fun main() =
               } else {
                 "opengl"
               }
-            bgfx_create_program(
-              loadShader("shaders/$subdir/vs_triangle.bin"),
-              loadShader("shaders/$subdir/fs_triangle.bin"),
-              true,
+            install(
+              acquire = {
+                bgfx_create_program(
+                  loadShader("shaders/$subdir/vs_triangle.bin"),
+                  loadShader("shaders/$subdir/fs_triangle.bin"),
+                  true,
+                )
+              },
+              release = { program, _ ->
+                bgfx_destroy_program(program)
+              },
             )
           }
         Triple(vertexBuffer, indexBuffer, shader)
@@ -254,13 +300,6 @@ fun main() =
 
       bgfx_frame(false)
     }
-    bgfx_destroy_program(sh)
-    bgfx_destroy_vertex_buffer(vBuf)
-    bgfx_destroy_index_buffer(iBuf)
-    bgfx_shutdown()
-
-    glfwDestroyWindow(window)
-    glfwTerminate()
   }
 
 private val logger = KotlinLogging.logger("Main")

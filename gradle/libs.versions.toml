@@ -5,6 +5,7 @@ logback = "1.5.21"
 arrow = "2.2.0"
 suspendapp = "0.4.0"
 ktor = "3.3.3"
+kotest = "6.0.5"
 
 [libraries]
 kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
@@ -14,6 +15,9 @@ arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref 
 arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
 suspendapp = { module = "io.arrow-kt:suspendapp", version.ref = "suspendapp" }
 ktor-io = { module = "io.ktor:ktor-io", version.ref = "ktor" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

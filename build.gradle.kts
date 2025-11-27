@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.lwjgl.Lwjgl.Addons.`joml 1․10․7`
 import org.lwjgl.Lwjgl.Addons.`joml-primitives 1․10․0`
 import org.lwjgl.Lwjgl.Module.bgfx
@@ -18,7 +20,12 @@ application {
   mainClass.set("MainKt")
 
   if (System.getProperty("os.name").lowercase().contains("mac")) {
-    applicationDefaultJvmArgs = listOf("-XstartOnFirstThread")
+    applicationDefaultJvmArgs =
+      listOf(
+        "-XstartOnFirstThread",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--enable-native-access=ALL-UNNAMED",
+      )
   }
 }
 
@@ -52,17 +59,32 @@ dependencies {
   implementation(`joml-primitives 1․10․0`)
 }
 
-tasks.test {
+tasks.withType<Test>().configureEach {
   useJUnitPlatform()
+
+  testLogging {
+    showStandardStreams = true
+
+    events =
+      setOf(
+        TestLogEvent.PASSED,
+        TestLogEvent.SKIPPED,
+        TestLogEvent.FAILED,
+//        TestLogEvent.STANDARD_OUT,
+//        TestLogEvent.STANDARD_ERROR,
+      )
+
+    exceptionFormat = TestExceptionFormat.FULL
+    showExceptions = true
+    showCauses = false
+    showStackTraces = true
+  }
 }
 
 kotlin {
   jvmToolchain(21)
 
   compilerOptions {
-    freeCompilerArgs.addAll(
-      "-Xunused-return-value=full",
-      "-Xcontext-parameters",
-    )
+    freeCompilerArgs.add("-Xcontext-parameters")
   }
 }

@@ -89,15 +89,15 @@ operator fun Proportion.plus(other: Proportion): Proportion = Proportion.percent
 operator fun Proportion.minus(other: Proportion): Proportion = Proportion.percentClamping(this.percent - other.percent)
 
 /**
- * Scales this proportion's rate (0.0..1.0) by the given scalar.
+ * Scales this proportion's percent by the given scalar and clamps the result.
  *
- * @param scalar multiplier applied to the rate value; must be finite.
- * @return rate value after scaling.
+ * @param scalar multiplier applied to the percent value; must be finite.
+ * @return proportion whose percent is the scaled result clamped to the valid range.
  * @throws IllegalArgumentException if [scalar] is not finite.
  */
-operator fun Proportion.times(scalar: Double): Double {
+operator fun Proportion.times(scalar: Double): Proportion {
   require(scalar.isFinite()) { "Scalar must be finite" }
-  return this.rate * scalar
+  return Proportion.percentClamping(this.percent * scalar)
 }
 
 /**

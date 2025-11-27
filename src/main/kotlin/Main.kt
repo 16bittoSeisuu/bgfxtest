@@ -56,7 +56,11 @@ import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.glfw.GLFWNativeCocoa.glfwGetCocoaWindow
+import org.lwjgl.glfw.GLFWNativeWin32.glfwGetWin32Window
+import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Display
+import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Window
 import org.lwjgl.system.MemoryStack
+import org.lwjgl.system.Platform
 
 fun main() =
   application {
@@ -80,12 +84,22 @@ fun main() =
       resolution.reset(BGFX_RESET_VSYNC)
 
       val platformData = init.platformData()
-      platformData.ndt(0L)
-      platformData.nwh(glfwGetCocoaWindow(window))
       platformData.context(0L)
       platformData.backBuffer(0L)
       platformData.backBufferDS(0L)
       platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT)
+
+      val nativeWindowHandle =
+        when (Platform.get()) {
+          Platform.MACOSX -> glfwGetCocoaWindow(window)
+          Platform.WINDOWS -> glfwGetWin32Window(window)
+          Platform.LINUX -> {
+            platformData.ndt(glfwGetX11Display())
+            glfwGetX11Window(window)
+          }
+          else -> error("Unsupported platform: ${Platform.get()}")
+        }
+      platformData.nwh(nativeWindowHandle)
 
       check(bgfx_init(init)) { "Failed to initialize bgfx" }
     }

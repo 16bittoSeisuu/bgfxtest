@@ -1,0 +1,18 @@
+[versions]
+kotlin = "2.3.0-RC"
+kotlin-logging = "7.0.13"
+logback = "1.5.21"
+arrow = "2.2.0"
+suspendapp = "0.4.0"
+
+[libraries]
+kotlin-logging = { module = "io.github.oshai:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
+arrow-resilience = { module = "io.arrow-kt:arrow-resilience", version.ref = "arrow" }
+suspendapp = { module = "io.arrow-kt:suspendapp", version.ref = "suspendapp" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+lwjgl = { id = "org.lwjgl.plugin", version = "0.0.35" }

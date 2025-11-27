@@ -29,6 +29,7 @@ repositories {
 dependencies {
   implementation(libs.kotlin.logging)
   implementation(libs.logback.classic)
+  implementation(libs.ktor.io)
 
   // Arrow
   implementation(libs.arrow.core)

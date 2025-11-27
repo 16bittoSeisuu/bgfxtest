@@ -1,5 +1,12 @@
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import net.japanesehunter.math.Color
+import net.japanesehunter.math.cyan
+import net.japanesehunter.math.gray80
+import net.japanesehunter.math.magenta
+import net.japanesehunter.math.toAbgr8888
+import net.japanesehunter.math.toRgba8888
+import net.japanesehunter.math.yellow
 import org.lwjgl.BufferUtils
 import org.lwjgl.bgfx.BGFX.BGFX_ATTRIB_COLOR0
 import org.lwjgl.bgfx.BGFX.BGFX_ATTRIB_POSITION
@@ -113,10 +120,11 @@ fun main() =
     logger.debug { "Initialized bgfx" }
 
     bgfx_set_view_rect(0, 0, 0, 1280, 720)
+    val background = Color.gray80.toRgba8888()
     bgfx_set_view_clear(
       0,
       BGFX_CLEAR_COLOR or BGFX_CLEAR_DEPTH,
-      0x303030ff,
+      background,
       1.0f,
       0,
     )
@@ -162,9 +170,9 @@ fun main() =
               vertexBuffer.putInt(color)
             }
 
-            val cyanAbgr = 0xFFFFFF00.toInt()
-            val magentaAbgr = 0xFF00FFFF.toInt()
-            val yellowAbgr = 0xFFFF00FF.toInt()
+            val cyanAbgr = Color.cyan.toAbgr8888()
+            val magentaAbgr = Color.magenta.toAbgr8888()
+            val yellowAbgr = Color.yellow.toAbgr8888()
 
             putVertex(-0.5f, -0.5f, 0f, cyanAbgr)
             putVertex(0.5f, -0.5f, 0f, magentaAbgr)

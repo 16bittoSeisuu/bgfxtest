@@ -1,5 +1,7 @@
 package net.japanesehunter.math
 
+import kotlin.math.roundToInt
+
 // region constants
 
 /**
@@ -74,6 +76,14 @@ val Color.Companion.magenta: Color
 val Color.Companion.yellow: Color
   get() = YellowColor
 
+/**
+ * 80% gray (RGB 80%, opaque).
+ *
+ * @return reusable 80% gray color.
+ */
+val Color.Companion.gray80: Color
+  get() = Gray80Color
+
 // endregion
 
 // region constructors
@@ -132,6 +142,36 @@ fun Color.Companion.rgbaPercent(
     Proportion.percentClamping(bluePercent),
     Proportion.percentClamping(alphaPercent),
   )
+}
+
+// endregion
+
+// region conversions
+
+/**
+ * Converts this color to ABGR8888 packed integer (8 bits per channel).
+ *
+ * @return packed ABGR8888 color.
+ */
+fun Color.toAbgr8888(): Int {
+  val a = alpha.toByteChannel()
+  val b = blue.toByteChannel()
+  val g = green.toByteChannel()
+  val r = red.toByteChannel()
+  return (a shl 24) or (b shl 16) or (g shl 8) or r
+}
+
+/**
+ * Converts this color to RGBA8888 packed integer (8 bits per channel).
+ *
+ * @return packed RGBA8888 color.
+ */
+fun Color.toRgba8888(): Int {
+  val r = red.toByteChannel()
+  val g = green.toByteChannel()
+  val b = blue.toByteChannel()
+  val a = alpha.toByteChannel()
+  return (r shl 24) or (g shl 16) or (b shl 8) or a
 }
 
 // endregion
@@ -208,4 +248,14 @@ private val YellowColor = ColorImpl(
   Proportion.full,
 )
 
+private val Gray80Color = ColorImpl(
+  Proportion.percentClamping(80.0),
+  Proportion.percentClamping(80.0),
+  Proportion.percentClamping(80.0),
+  Proportion.full,
+)
+
 // endregion
+
+private fun Proportion.toByteChannel(): Int =
+  (percent.coerceIn(0.0, 100.0) * 255.0 / 100.0).roundToInt().coerceIn(0, 255)

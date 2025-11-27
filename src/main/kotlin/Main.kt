@@ -11,10 +11,10 @@ import org.lwjgl.bgfx.BGFX.BGFX_CLEAR_DEPTH
 import org.lwjgl.bgfx.BGFX.BGFX_DISCARD_NONE
 import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_COUNT
-import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_DIRECT3D11
-import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_DIRECT3D12
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_METAL
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_NOOP
+import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_OPENGL
+import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_OPENGLES
 import org.lwjgl.bgfx.BGFX.BGFX_RESET_VSYNC
 import org.lwjgl.bgfx.BGFX.BGFX_STATE_DEFAULT
 import org.lwjgl.bgfx.BGFX.bgfx_copy
@@ -212,9 +212,9 @@ fun main() =
             val rendererType = bgfx_get_renderer_type()
             val subdir =
               when (rendererType) {
-                BGFX_RENDERER_TYPE_DIRECT3D11,
-                BGFX_RENDERER_TYPE_DIRECT3D12,
-                -> "dx11"
+                BGFX_RENDERER_TYPE_OPENGL,
+                BGFX_RENDERER_TYPE_OPENGLES,
+                -> "opengl"
 
                 BGFX_RENDERER_TYPE_METAL -> "metal"
 

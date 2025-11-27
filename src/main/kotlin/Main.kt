@@ -13,8 +13,6 @@ import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_COUNT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_METAL
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_NOOP
-import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_OPENGL
-import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_OPENGLES
 import org.lwjgl.bgfx.BGFX.BGFX_RESET_VSYNC
 import org.lwjgl.bgfx.BGFX.BGFX_STATE_DEFAULT
 import org.lwjgl.bgfx.BGFX.bgfx_copy
@@ -91,13 +89,22 @@ fun main() =
 
       val nativeWindowHandle =
         when (Platform.get()) {
-          Platform.MACOSX -> glfwGetCocoaWindow(window)
-          Platform.WINDOWS -> glfwGetWin32Window(window)
+          Platform.MACOSX -> {
+            glfwGetCocoaWindow(window)
+          }
+
+          Platform.WINDOWS -> {
+            glfwGetWin32Window(window)
+          }
+
           Platform.LINUX -> {
             platformData.ndt(glfwGetX11Display())
             glfwGetX11Window(window)
           }
-          else -> error("Unsupported platform: ${Platform.get()}")
+
+          else -> {
+            error("Unsupported platform: ${Platform.get()}")
+          }
         }
       platformData.nwh(nativeWindowHandle)
 
@@ -211,14 +218,10 @@ fun main() =
             }
             val rendererType = bgfx_get_renderer_type()
             val subdir =
-              when (rendererType) {
-                BGFX_RENDERER_TYPE_OPENGL,
-                BGFX_RENDERER_TYPE_OPENGLES,
-                -> "opengl"
-
-                BGFX_RENDERER_TYPE_METAL -> "metal"
-
-                else -> error("$rendererType is not supported")
+              if (rendererType == BGFX_RENDERER_TYPE_METAL) {
+                "metal"
+              } else {
+                "opengl"
               }
             bgfx_create_program(
               loadShader("shaders/$subdir/vs_triangle.bin"),

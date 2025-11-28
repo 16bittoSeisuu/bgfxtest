@@ -64,11 +64,11 @@ import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.glfw.GLFWNativeCocoa.glfwGetCocoaWindow
-import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandDisplay
-import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandWindow
 import org.lwjgl.glfw.GLFWNativeWin32.glfwGetWin32Window
 import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Display
 import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Window
+import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandDisplay
+import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandWindow
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.Platform
 

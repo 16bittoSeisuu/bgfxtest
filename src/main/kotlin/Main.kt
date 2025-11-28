@@ -53,9 +53,7 @@ import org.lwjgl.glfw.GLFW.GLFW_CLIENT_API
 import org.lwjgl.glfw.GLFW.GLFW_FALSE
 import org.lwjgl.glfw.GLFW.GLFW_NO_API
 import org.lwjgl.glfw.GLFW.GLFW_PLATFORM
-import org.lwjgl.glfw.GLFW.GLFW_ANY_PLATFORM
 import org.lwjgl.glfw.GLFW.GLFW_PLATFORM_WAYLAND
-import org.lwjgl.glfw.GLFW.GLFW_PLATFORM_X11
 import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
 import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import org.lwjgl.glfw.GLFW.GLFW_VISIBLE
@@ -65,7 +63,6 @@ import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwInitHint
 import org.lwjgl.glfw.GLFW.glfwPlatformSupported
 import org.lwjgl.glfw.GLFW.glfwPollEvents
-import org.lwjgl.glfw.GLFW.glfwGetPlatform
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
@@ -107,15 +104,6 @@ fun main() =
     glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE)
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
-    val glfwPlatform =
-      if (Platform.get() == Platform.LINUX) {
-        glfwGetPlatform()
-      } else {
-        GLFW_ANY_PLATFORM
-      }
-    if (isWaylandEnv && waylandSupported && glfwPlatform != GLFW_PLATFORM_WAYLAND) {
-      error("GLFW initialized with platform=$glfwPlatform, expected Wayland")
-    }
     val window =
       install(
         acquire = {
@@ -147,30 +135,29 @@ fun main() =
 
       val nativeWindowHandle =
         when (Platform.get()) {
-          Platform.MACOSX -> {
-            glfwGetCocoaWindow(window)
-          }
-
           Platform.WINDOWS -> {
+            logger.debug { "Using Windows" }
             glfwGetWin32Window(window)
           }
 
+          Platform.MACOSX -> {
+            logger.debug { "Using macOS" }
+            glfwGetCocoaWindow(window)
+          }
+
           Platform.LINUX -> {
-            when (glfwPlatform) {
-              GLFW_PLATFORM_WAYLAND -> {
-                val waylandDisplay = glfwGetWaylandDisplay()
-                platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND)
-                platformData.ndt(waylandDisplay)
-                glfwGetWaylandWindow(window)
-              }
-
-              GLFW_PLATFORM_X11, GLFW_ANY_PLATFORM -> {
-                val x11Display = glfwGetX11Display()
-                platformData.ndt(x11Display)
-                glfwGetX11Window(window)
-              }
-
-              else -> error("Unsupported GLFW platform: $glfwPlatform")
+            logger.debug { "Using Linux" }
+            val waylandDisplay = glfwGetWaylandDisplay()
+            if (waylandDisplay != 0L) {
+              logger.debug { "Using Wayland" }
+              platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND)
+              platformData.ndt(waylandDisplay)
+              glfwGetWaylandWindow(window)
+            } else {
+              logger.debug { "Using X11" }
+              val x11Display = glfwGetX11Display()
+              platformData.ndt(x11Display)
+              glfwGetX11Window(window)
             }
           }
 

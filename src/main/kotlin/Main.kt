@@ -17,7 +17,6 @@ import org.lwjgl.bgfx.BGFX.BGFX_CLEAR_COLOR
 import org.lwjgl.bgfx.BGFX.BGFX_CLEAR_DEPTH
 import org.lwjgl.bgfx.BGFX.BGFX_DISCARD_NONE
 import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT
-import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_COUNT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_METAL
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_NOOP
@@ -67,8 +66,6 @@ import org.lwjgl.glfw.GLFWNativeCocoa.glfwGetCocoaWindow
 import org.lwjgl.glfw.GLFWNativeWin32.glfwGetWin32Window
 import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Display
 import org.lwjgl.glfw.GLFWNativeX11.glfwGetX11Window
-import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandDisplay
-import org.lwjgl.glfw.GLFWNativeWayland.glfwGetWaylandWindow
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.Platform
 
@@ -128,15 +125,8 @@ fun main() =
           }
 
           Platform.LINUX -> {
-            val waylandDisplay = glfwGetWaylandDisplay()
-            if (waylandDisplay != 0L) {
-              platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND)
-              platformData.ndt(waylandDisplay)
-              glfwGetWaylandWindow(window)
-            } else {
-              platformData.ndt(glfwGetX11Display())
-              glfwGetX11Window(window)
-            }
+            platformData.ndt(glfwGetX11Display())
+            glfwGetX11Window(window)
           }
 
           else -> {

@@ -52,12 +52,16 @@ import org.lwjgl.bgfx.BGFXVertexLayout
 import org.lwjgl.glfw.GLFW.GLFW_CLIENT_API
 import org.lwjgl.glfw.GLFW.GLFW_FALSE
 import org.lwjgl.glfw.GLFW.GLFW_NO_API
+import org.lwjgl.glfw.GLFW.GLFW_PLATFORM
+import org.lwjgl.glfw.GLFW.GLFW_PLATFORM_WAYLAND
 import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
 import org.lwjgl.glfw.GLFW.GLFW_TRUE
 import org.lwjgl.glfw.GLFW.GLFW_VISIBLE
 import org.lwjgl.glfw.GLFW.glfwCreateWindow
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwInit
+import org.lwjgl.glfw.GLFW.glfwInitHint
+import org.lwjgl.glfw.GLFW.glfwPlatformSupported
 import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwTerminate
 import org.lwjgl.glfw.GLFW.glfwWindowHint
@@ -77,6 +81,11 @@ fun main() =
     val height = 720
     install(
       acquire = {
+        if (Platform.get() == Platform.LINUX &&
+          glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)
+        ) {
+          glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND)
+        }
         check(glfwInit()) { "Unable to initialize GLFW" }
       },
       release = { _, _ ->

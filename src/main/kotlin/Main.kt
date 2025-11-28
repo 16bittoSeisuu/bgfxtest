@@ -34,6 +34,7 @@ import org.lwjgl.bgfx.BGFX.bgfx_destroy_vertex_buffer
 import org.lwjgl.bgfx.BGFX.bgfx_frame
 import org.lwjgl.bgfx.BGFX.bgfx_get_renderer_type
 import org.lwjgl.bgfx.BGFX.bgfx_init
+import org.lwjgl.bgfx.BGFX.bgfx_init_ctor
 import org.lwjgl.bgfx.BGFX.bgfx_set_index_buffer
 import org.lwjgl.bgfx.BGFX.bgfx_set_state
 import org.lwjgl.bgfx.BGFX.bgfx_set_vertex_buffer
@@ -102,6 +103,7 @@ fun main() =
 
     MemoryStack.stackPush().use { stack ->
       val init = BGFXInit.calloc(stack)
+      bgfx_init_ctor(init)
       init.type(BGFX_RENDERER_TYPE_COUNT)
       val resolution = init.resolution()
       resolution.width(1280)

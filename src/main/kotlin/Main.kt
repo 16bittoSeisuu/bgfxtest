@@ -54,7 +54,6 @@ import org.lwjgl.glfw.GLFW.GLFW_CLIENT_API
 import org.lwjgl.glfw.GLFW.GLFW_FALSE
 import org.lwjgl.glfw.GLFW.GLFW_NO_API
 import org.lwjgl.glfw.GLFW.GLFW_PLATFORM
-import org.lwjgl.glfw.GLFW.GLFW_PLATFORM_X11
 import org.lwjgl.glfw.GLFW.GLFW_PLATFORM_WAYLAND
 import org.lwjgl.glfw.GLFW.GLFW_RESIZABLE
 import org.lwjgl.glfw.GLFW.GLFW_TRUE
@@ -63,7 +62,6 @@ import org.lwjgl.glfw.GLFW.glfwCreateWindow
 import org.lwjgl.glfw.GLFW.glfwDestroyWindow
 import org.lwjgl.glfw.GLFW.glfwInit
 import org.lwjgl.glfw.GLFW.glfwInitHint
-import org.lwjgl.glfw.GLFW.glfwGetPlatform
 import org.lwjgl.glfw.GLFW.glfwPlatformSupported
 import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwTerminate
@@ -115,12 +113,9 @@ fun main() =
         release = { window, _ ->
           glfwDestroyWindow(window)
         },
-    )
+      )
     check(window != 0L) { "Failed to create GLFW window" }
     logger.debug { "Created GLFW window" }
-
-    val glfwPlatform = glfwGetPlatform()
-    logger.debug { "GLFW platform: $glfwPlatform" }
 
     bgfx_render_frame(0)
 
@@ -153,27 +148,17 @@ fun main() =
 
           Platform.LINUX -> {
             logger.debug { "Using Linux" }
-            if (glfwPlatform == GLFW_PLATFORM_WAYLAND) {
-              val waylandDisplay = glfwGetWaylandDisplay()
-              check(waylandDisplay != 0L) {
-                "GLFW reported Wayland platform but display is null"
-              }
+            val waylandDisplay = glfwGetWaylandDisplay()
+            if (waylandDisplay != 0L) {
               logger.debug { "Using Wayland" }
               platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND)
               platformData.ndt(waylandDisplay)
-              val waylandWindow = glfwGetWaylandWindow(window)
-              check(waylandWindow != 0L) { "Failed to get Wayland window handle" }
-              waylandWindow
-            } else if (glfwPlatform == GLFW_PLATFORM_X11) {
+              glfwGetWaylandWindow(window)
+            } else {
               logger.debug { "Using X11" }
               val x11Display = glfwGetX11Display()
-              check(x11Display != 0L) { "Failed to get X11 display" }
               platformData.ndt(x11Display)
-              val x11Window = glfwGetX11Window(window)
-              check(x11Window != 0L) { "Failed to get X11 window handle" }
-              x11Window
-            } else {
-              error("Unsupported GLFW platform on Linux: $glfwPlatform")
+              glfwGetX11Window(window)
             }
           }
 

@@ -152,6 +152,7 @@ fun main() =
             val useWayland = waylandDisplay != 0L && isWaylandEnv
             if (useWayland) {
               logger.debug { "Using Wayland" }
+              platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND)
               platformData.ndt(waylandDisplay)
               val waylandWindow = glfwGetWaylandWindow(window)
               check(waylandWindow != 0L) { "Failed to get Wayland window handle" }

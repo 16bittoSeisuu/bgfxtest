@@ -5,6 +5,7 @@ import org.lwjgl.Lwjgl.Addons.`joml-primitives 1․10․0`
 import org.lwjgl.Lwjgl.Module.bgfx
 import org.lwjgl.Lwjgl.Module.glfw
 import org.lwjgl.Lwjgl.Module.stb
+import org.lwjgl.Lwjgl.Module.wayland
 import org.lwjgl.lwjgl
 
 plugins {
@@ -53,6 +54,7 @@ dependencies {
       bgfx,
       glfw,
       stb,
+      wayland,
     )
   }
   implementation(`joml 1․10․7`)

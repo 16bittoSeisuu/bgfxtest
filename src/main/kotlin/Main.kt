@@ -21,6 +21,7 @@ import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_WAYLAND
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_COUNT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_METAL
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_NOOP
+import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_VULKAN
 import org.lwjgl.bgfx.BGFX.BGFX_RESET_VSYNC
 import org.lwjgl.bgfx.BGFX.BGFX_STATE_DEFAULT
 import org.lwjgl.bgfx.BGFX.bgfx_copy
@@ -300,10 +301,10 @@ fun main() =
 
             val rendererType = bgfx_get_renderer_type()
             val subdir =
-              if (rendererType == BGFX_RENDERER_TYPE_METAL) {
-                "metal"
-              } else {
-                "opengl"
+              when (rendererType) {
+                BGFX_RENDERER_TYPE_VULKAN -> "spirv"
+                BGFX_RENDERER_TYPE_METAL -> "metal"
+                else -> "opengl"
               }
             install(
               acquire = {

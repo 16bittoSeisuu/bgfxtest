@@ -7,6 +7,7 @@ import net.japanesehunter.math.magenta
 import net.japanesehunter.math.toAbgr8888
 import net.japanesehunter.math.toRgba8888
 import net.japanesehunter.math.yellow
+import org.joml.Matrix4f
 import org.lwjgl.BufferUtils
 import org.lwjgl.bgfx.BGFX.BGFX_ATTRIB_COLOR0
 import org.lwjgl.bgfx.BGFX.BGFX_ATTRIB_POSITION
@@ -19,7 +20,6 @@ import org.lwjgl.bgfx.BGFX.BGFX_DISCARD_NONE
 import org.lwjgl.bgfx.BGFX.BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_COUNT
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_METAL
-import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_NOOP
 import org.lwjgl.bgfx.BGFX.BGFX_RENDERER_TYPE_VULKAN
 import org.lwjgl.bgfx.BGFX.BGFX_RESET_VSYNC
 import org.lwjgl.bgfx.BGFX.BGFX_STATE_DEFAULT
@@ -32,6 +32,7 @@ import org.lwjgl.bgfx.BGFX.bgfx_destroy_index_buffer
 import org.lwjgl.bgfx.BGFX.bgfx_destroy_program
 import org.lwjgl.bgfx.BGFX.bgfx_destroy_vertex_buffer
 import org.lwjgl.bgfx.BGFX.bgfx_frame
+import org.lwjgl.bgfx.BGFX.bgfx_get_caps
 import org.lwjgl.bgfx.BGFX.bgfx_get_renderer_type
 import org.lwjgl.bgfx.BGFX.bgfx_init
 import org.lwjgl.bgfx.BGFX.bgfx_init_ctor
@@ -40,6 +41,7 @@ import org.lwjgl.bgfx.BGFX.bgfx_set_state
 import org.lwjgl.bgfx.BGFX.bgfx_set_vertex_buffer
 import org.lwjgl.bgfx.BGFX.bgfx_set_view_clear
 import org.lwjgl.bgfx.BGFX.bgfx_set_view_rect
+import org.lwjgl.bgfx.BGFX.bgfx_set_view_transform
 import org.lwjgl.bgfx.BGFX.bgfx_shutdown
 import org.lwjgl.bgfx.BGFX.bgfx_submit
 import org.lwjgl.bgfx.BGFX.bgfx_touch
@@ -166,7 +168,7 @@ fun main() =
     val vertexBuffer =
       MemoryStack.stackPush().use { stack ->
         val layout = BGFXVertexLayout.calloc(stack)
-        bgfx_vertex_layout_begin(layout, BGFX_RENDERER_TYPE_NOOP)
+        bgfx_vertex_layout_begin(layout, bgfx_get_renderer_type())
         bgfx_vertex_layout_add(
           layout,
           BGFX_ATTRIB_POSITION,
@@ -269,7 +271,7 @@ fun main() =
         val rendererType = bgfx_get_renderer_type()
         val subdir =
           when (rendererType) {
-            BGFX_RENDERER_TYPE_VULKAN -> "spirv"
+            BGFX_RENDERER_TYPE_VULKAN -> "vulkan"
             BGFX_RENDERER_TYPE_METAL -> "metal"
             else -> "opengl"
           }
@@ -286,6 +288,24 @@ fun main() =
           },
         )
       }
+    val viewBuffer =
+      Matrix4f()
+        .identity()
+        .lookAtLH(0f, 0f, -2f, 0f, 0f, 0f, 0f, 1f, 0f)
+        .get(FloatArray(16))
+    val projBuffer =
+      Matrix4f()
+        .identity()
+        .setPerspectiveLH(
+          Math.toRadians(60.0).toFloat(), // fovY
+          width.toFloat() / height.toFloat(), // aspect
+          0.1f, // near
+          100f, // far
+          bgfx_get_caps()?.homogeneousDepth() != true,
+        ).get(FloatArray(16))
+    logger.debug { "view: ${viewBuffer.contentToString()}" }
+    logger.debug { "proj: ${projBuffer.contentToString()}" }
+    bgfx_set_view_transform(0, viewBuffer, projBuffer)
     logger.debug { "Prepared buffers and shader" }
     // endregion
 
@@ -294,10 +314,9 @@ fun main() =
 
       bgfx_touch(0)
 
+      bgfx_set_state(BGFX_STATE_DEFAULT, 0)
       bgfx_set_vertex_buffer(0, vertexBuffer, 0, 3)
       bgfx_set_index_buffer(indexBuffer, 0, 3)
-      bgfx_set_state(BGFX_STATE_DEFAULT, 0)
-
       bgfx_submit(0, shader, 0, BGFX_DISCARD_NONE.toInt())
 
       bgfx_frame(false)

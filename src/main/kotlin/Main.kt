@@ -73,6 +73,8 @@ fun main() =
   application {
     val width = 1280
     val height = 720
+
+    // region init glfw
     install(
       acquire = {
         check(glfwInit()) { "Unable to initialize GLFW" }
@@ -96,45 +98,46 @@ fun main() =
       )
     check(window != 0L) { "Failed to create GLFW window" }
     logger.debug { "Created GLFW window" }
+    // endregion
 
-    bgfx_render_frame(0)
-
+    // region init bgfx
     MemoryStack.stackPush().use { stack ->
-      val init = BGFXInit.calloc(stack)
-      bgfx_init_ctor(init)
-      init.type(BGFX_RENDERER_TYPE_COUNT)
-      val resolution = init.resolution()
-      resolution.width(1280)
-      resolution.height(720)
-      resolution.reset(BGFX_RESET_VSYNC)
-
-      val platformData = init.platformData()
-      platformData.context(0L)
-      platformData.backBuffer(0L)
-      platformData.backBufferDS(0L)
-      platformData.type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT)
-
-      val nativeWindowHandle =
-        when (Platform.get()) {
-          Platform.MACOSX -> {
-            glfwGetCocoaWindow(window)
+      bgfx_render_frame(0)
+      val init =
+        BGFXInit.calloc(stack).apply {
+          bgfx_init_ctor(this)
+          type(BGFX_RENDERER_TYPE_COUNT)
+          resolution().apply {
+            width(width)
+            height(height)
+            reset(BGFX_RESET_VSYNC)
           }
 
-          Platform.WINDOWS -> {
-            glfwGetWin32Window(window)
-          }
+          platformData().apply {
+            type(BGFX_NATIVE_WINDOW_HANDLE_TYPE_DEFAULT)
 
-          Platform.LINUX -> {
-            platformData.ndt(glfwGetX11Display())
-            glfwGetX11Window(window)
-          }
+            val nativeWindowHandle =
+              when (Platform.get()) {
+                Platform.MACOSX -> {
+                  glfwGetCocoaWindow(window)
+                }
 
-          else -> {
-            error("Unsupported platform: ${Platform.get()}")
+                Platform.WINDOWS -> {
+                  glfwGetWin32Window(window)
+                }
+
+                Platform.LINUX -> {
+                  ndt(glfwGetX11Display())
+                  glfwGetX11Window(window)
+                }
+
+                else -> {
+                  error("Unsupported platform: ${Platform.get()}")
+                }
+              }
+            nwh(nativeWindowHandle)
           }
         }
-      platformData.nwh(nativeWindowHandle)
-
       install(
         acquire = {
           check(bgfx_init(init)) { "Failed to initialize bgfx" }
@@ -143,9 +146,11 @@ fun main() =
           bgfx_shutdown()
         },
       )
+      logger.debug { "Initialized bgfx" }
     }
-    logger.debug { "Initialized bgfx" }
+    // endregion
 
+    // region init rendering context
     bgfx_set_view_rect(0, 0, 0, width, height)
     val background = Color.gray80.toRgba8888()
     bgfx_set_view_clear(
@@ -155,8 +160,10 @@ fun main() =
       1.0f,
       0,
     )
+    // endregion
 
-    val (vBuf, iBuf, sh) =
+    // region prepare buffers and shader
+    val vertexBuffer =
       MemoryStack.stackPush().use { stack ->
         val layout = BGFXVertexLayout.calloc(stack)
         bgfx_vertex_layout_begin(layout, BGFX_RENDERER_TYPE_NOOP)
@@ -177,129 +184,121 @@ fun main() =
           false, // asInt
         )
         bgfx_vertex_layout_end(layout)
-
+        val vertexStride = 16
+        val vertexCount = 3
         val vertexBuffer =
-          run {
-            val vertexStride = 16
-            val vertexCount = 3
-            val vertexBuffer =
-              BufferUtils.createByteBuffer(vertexCount * vertexStride)
+          BufferUtils.createByteBuffer(vertexCount * vertexStride)
 
-            fun putVertex(
-              x: Float,
-              y: Float,
-              z: Float,
-              color: Int,
-            ) {
-              vertexBuffer.putFloat(x)
-              vertexBuffer.putFloat(y)
-              vertexBuffer.putFloat(z)
-              vertexBuffer.putInt(color)
+        fun putVertex(
+          x: Float,
+          y: Float,
+          z: Float,
+          color: Color,
+        ) {
+          vertexBuffer.putFloat(x)
+          vertexBuffer.putFloat(y)
+          vertexBuffer.putFloat(z)
+          vertexBuffer.putInt(color.toAbgr8888())
+        }
+
+        putVertex(-0.5f, -0.5f, 0f, Color.cyan)
+        putVertex(0.5f, -0.5f, 0f, Color.magenta)
+        putVertex(0f, 0.5f, 0f, Color.yellow)
+
+        vertexBuffer.flip()
+
+        val vertexMemory =
+          checkNotNull(bgfx_copy(vertexBuffer)) {
+            "Failed to copy vertex buffer data"
+          }
+        install(
+          acquire = {
+            bgfx_create_vertex_buffer(
+              vertexMemory,
+              layout,
+              BGFX_BUFFER_NONE,
+            )
+          },
+          release = { buf, _ ->
+            bgfx_destroy_vertex_buffer(buf)
+          },
+        )
+      }
+    val indexBuffer =
+      run {
+        val indexBuffer = BufferUtils.createShortBuffer(3)
+        indexBuffer.put(0)
+        indexBuffer.put(1)
+        indexBuffer.put(2)
+        indexBuffer.flip()
+        val indexMemory =
+          checkNotNull(bgfx_copy(indexBuffer)) {
+            "Failed to copy index buffer data"
+          }
+        install(
+          acquire = {
+            bgfx_create_index_buffer(
+              indexMemory,
+              BGFX_BUFFER_NONE,
+            )
+          },
+          release = { buf, _ ->
+            bgfx_destroy_index_buffer(buf)
+          },
+        )
+      }
+    val shader =
+      run {
+        fun loadShader(path: String): Short {
+          val bytes =
+            object {}
+              .javaClass
+              .getResourceAsStream(path)
+              ?.readBytes()
+              ?: error("Failed to load shader: $path")
+          val buffer = BufferUtils.createByteBuffer(bytes.size)
+          buffer.put(bytes)
+          buffer.flip()
+          val shaderMemory =
+            checkNotNull(bgfx_copy(buffer)) {
+              "Failed to copy shader data: $path"
             }
+          return bgfx_create_shader(shaderMemory)
+        }
 
-            val cyanAbgr = Color.cyan.toAbgr8888()
-            val magentaAbgr = Color.magenta.toAbgr8888()
-            val yellowAbgr = Color.yellow.toAbgr8888()
-
-            putVertex(-0.5f, -0.5f, 0f, cyanAbgr)
-            putVertex(0.5f, -0.5f, 0f, magentaAbgr)
-            putVertex(0f, 0.5f, 0f, yellowAbgr)
-
-            vertexBuffer.flip()
-
-            val vertexMemory =
-              checkNotNull(bgfx_copy(vertexBuffer)) {
-                "Failed to copy vertex buffer data"
-              }
-            install(
-              acquire = {
-                bgfx_create_vertex_buffer(
-                  vertexMemory,
-                  layout,
-                  BGFX_BUFFER_NONE,
-                )
-              },
-              release = { buf, _ ->
-                bgfx_destroy_vertex_buffer(buf)
-              },
-            )
+        val rendererType = bgfx_get_renderer_type()
+        val subdir =
+          when (rendererType) {
+            BGFX_RENDERER_TYPE_VULKAN -> "spirv"
+            BGFX_RENDERER_TYPE_METAL -> "metal"
+            else -> "opengl"
           }
-        val indexBuffer =
-          run {
-            val indexBuffer = BufferUtils.createShortBuffer(3)
-            indexBuffer.put(0)
-            indexBuffer.put(1)
-            indexBuffer.put(2)
-            indexBuffer.flip()
-            val indexMemory =
-              checkNotNull(bgfx_copy(indexBuffer)) {
-                "Failed to copy index buffer data"
-              }
-            install(
-              acquire = {
-                bgfx_create_index_buffer(
-                  indexMemory,
-                  BGFX_BUFFER_NONE,
-                )
-              },
-              release = { buf, _ ->
-                bgfx_destroy_index_buffer(buf)
-              },
+        install(
+          acquire = {
+            bgfx_create_program(
+              loadShader("shaders/$subdir/vs_triangle.bin"),
+              loadShader("shaders/$subdir/fs_triangle.bin"),
+              true,
             )
-          }
-        val shader =
-          run {
-            fun loadShader(path: String): Short {
-              val bytes =
-                object {}
-                  .javaClass
-                  .getResourceAsStream(path)
-                  ?.readBytes()
-                  ?: error("Failed to load shader: $path")
-              val buffer = BufferUtils.createByteBuffer(bytes.size)
-              buffer.put(bytes)
-              buffer.flip()
-              val shaderMemory =
-                checkNotNull(bgfx_copy(buffer)) {
-                  "Failed to copy shader data: $path"
-                }
-              return bgfx_create_shader(shaderMemory)
-            }
-
-            val rendererType = bgfx_get_renderer_type()
-            val subdir =
-              when (rendererType) {
-                BGFX_RENDERER_TYPE_VULKAN -> "spirv"
-                BGFX_RENDERER_TYPE_METAL -> "metal"
-                else -> "opengl"
-              }
-            install(
-              acquire = {
-                bgfx_create_program(
-                  loadShader("shaders/$subdir/vs_triangle.bin"),
-                  loadShader("shaders/$subdir/fs_triangle.bin"),
-                  true,
-                )
-              },
-              release = { program, _ ->
-                bgfx_destroy_program(program)
-              },
-            )
-          }
-        Triple(vertexBuffer, indexBuffer, shader)
+          },
+          release = { program, _ ->
+            bgfx_destroy_program(program)
+          },
+        )
       }
     logger.debug { "Prepared buffers and shader" }
+    // endregion
 
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents()
 
       bgfx_touch(0)
 
-      bgfx_set_vertex_buffer(0, vBuf, 0, 3)
-      bgfx_set_index_buffer(iBuf, 0, 3)
+      bgfx_set_vertex_buffer(0, vertexBuffer, 0, 3)
+      bgfx_set_index_buffer(indexBuffer, 0, 3)
       bgfx_set_state(BGFX_STATE_DEFAULT, 0)
 
-      bgfx_submit(0, sh, 0, BGFX_DISCARD_NONE.toInt())
+      bgfx_submit(0, shader, 0, BGFX_DISCARD_NONE.toInt())
 
       bgfx_frame(false)
     }
